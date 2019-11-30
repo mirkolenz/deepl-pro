@@ -27,7 +27,7 @@ class Translator:
     auth_key: str
     source_lang: Language = Language.EN
     target_lang: Language = Language.DE
-    retries: int = 5
+    retry_limit: int = 5
     split_sentences: bool = True
     preserve_formatting: bool = False
     xml_handling: bool = False
@@ -36,7 +36,7 @@ class Translator:
     splitting_tags: List[str] = None
     ignore_tags: List[str] = None
 
-    def translate_text(self, text: str) -> str:
+    def translate_text(self, text: str, retries: int = 0) -> str:
         params = {
             "auth_key": self.auth_key,
             "text": text,
@@ -75,29 +75,34 @@ class Translator:
             )
 
         elif code == 404:
-            raise ValueError("The requested resource could not be found.")
+            raise NameError("The requested resource could not be found.")
 
         elif code == 413:
             raise ValueError("The request size exceeds the limit.")
 
         elif code == 429 or code == 503:
-            timeout = 5
+            if retries <= self.retry_limit:
+                timeout = 5
 
-            if code == 429:
-                logger.warn("Too many requests. Please wait and resend your request.")
-            elif code == 503:
-                logger.warn("Resource currently unavailable. Try again later.")
+                if code == 429:
+                    logger.warn(
+                        "Too many requests. Please wait and resend your request."
+                    )
+                elif code == 503:
+                    logger.warn("Resource currently unavailable. Try again later.")
 
-            logger.info(f"Waiting {timeout} seconds until retry.")
-            time.sleep(timeout)
+                logger.info(f"Waiting {timeout} seconds until retry.")
+                time.sleep(timeout)
 
-            return self.translate_text(text)
+                return self.translate_text(text, retries + 1)
+            else:
+                raise RuntimeError("Retry limit reached.")
 
         elif code == 456:
-            raise ValueError("Quota exceeded. The character limit has been reached.")
+            raise RuntimeError("Quota exceeded. The character limit has been reached.")
 
         else:
-            raise ValueError("Internal error.")
+            raise RuntimeError("Internal error.")
 
     def translate_texts(self, texts: List[str]) -> List[str]:
         with multiprocessing.Pool() as pool:
