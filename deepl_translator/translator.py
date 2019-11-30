@@ -27,14 +27,14 @@ class Translator:
     auth_key: str
     source_lang: Language = Language.EN
     target_lang: Language = Language.DE
-    retry_limit: int = 5
     split_sentences: bool = True
     preserve_formatting: bool = False
     xml_handling: bool = False
     outline_detection: bool = True
-    non_splitting_tags: List[str] = None
-    splitting_tags: List[str] = None
-    ignore_tags: List[str] = None
+    non_splitting_tags: List[str] = field(default_factory=list)
+    splitting_tags: List[str] = field(default_factory=list)
+    ignore_tags: List[str] = field(default_factory=list)
+    retry_limit: int = 5
 
     def translate_text(self, text: str, retries: int = 0) -> str:
         params = {
