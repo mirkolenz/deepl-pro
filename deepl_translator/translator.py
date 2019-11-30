@@ -27,6 +27,7 @@ class Translator:
     auth_key: str
     source_lang: Language = Language.EN
     target_lang: Language = Language.DE
+    retries: int = 5
     split_sentences: bool = True
     preserve_formatting: bool = False
     xml_handling: bool = False
@@ -98,7 +99,7 @@ class Translator:
         else:
             raise ValueError("Internal error.")
 
-    def translate_texts(self, texts: List[str]) -> str:
+    def translate_texts(self, texts: List[str]) -> List[str]:
         with multiprocessing.Pool() as pool:
             results = pool.map(self.translate_text, texts)
             return results
