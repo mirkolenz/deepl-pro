@@ -133,7 +133,9 @@ class Translator:
         else:
             raise RuntimeError("Internal error.")
 
-    def translate_texts(self, texts: List[str]) -> List[str]:
-        with multiprocessing.Pool() as pool:
-            results = pool.map(self.translate_text, texts)
-            return results
+    def translate_texts(self, texts: List[str], parallel: bool = True) -> List[str]:
+        if parallel:
+            with multiprocessing.Pool() as pool:
+                return pool.map(self.translate_text, texts)
+        else:
+            return map(self.translate_text, texts)
