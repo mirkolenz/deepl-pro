@@ -54,7 +54,8 @@ class Translator:
     non_splitting_tags: List[str] = field(default_factory=list)
     splitting_tags: List[str] = field(default_factory=list)
     ignore_tags: List[str] = field(default_factory=list)
-    retry_limit: int = 5
+    retry_timeout: int = 2
+    retry_limit: int = 7
 
     def _build_request(self, text: str) -> Dict[str, str]:
         params = {
@@ -111,7 +112,6 @@ class Translator:
 
         elif code == 429 or code == 503:
             if retries <= self.retry_limit:
-                timeout = 5
 
                 if code == 429:
                     logger.warn(
@@ -120,8 +120,8 @@ class Translator:
                 elif code == 503:
                     logger.warn("Resource currently unavailable. Try again later.")
 
-                logger.info(f"Waiting {timeout} seconds until retry.")
-                time.sleep(timeout)
+                logger.info(f"Waiting {self.timeout} seconds until retry.")
+                time.sleep(self.timeout)
 
                 return self.translate_text(text, retries + 1)
             else:
