@@ -138,4 +138,4 @@ class Translator:
             with multiprocessing.Pool() as pool:
                 return pool.map(self.translate_text, texts)
         else:
-            return map(self.translate_text, texts)
+            return list(map(self.translate_text, texts))
