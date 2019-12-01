@@ -8,6 +8,7 @@ from dataclasses import dataclass, field
 import requests
 
 logger = logging.getLogger("deepl_translator")
+logger.setLevel(logging.INFO)
 
 
 class Language(Enum):
