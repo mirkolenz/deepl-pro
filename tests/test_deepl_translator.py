@@ -25,7 +25,7 @@ def test_translate_xml(auth_key):
         auth_key,
         source_lang=dl.Language.EN,
         target_lang=dl.Language.DE,
-        xml_handling=True,
+        tag_handling=dl.TagHandling.XML,
     )
 
     assert translator.translate_text(xml_input) == xml_output

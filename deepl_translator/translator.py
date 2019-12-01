@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import List
+from typing import List, Dict
 import multiprocessing
 import time
 import logging
@@ -22,41 +22,70 @@ class Language(Enum):
     RU = "RU"
 
 
+class TagHandling(Enum):
+    XML = "xml"
+
+
+class SentenceSplitting(Enum):
+    NOTHING = "0"
+    INTERPUNCTION = "nonewlines"
+    NEWLINES_INTERPUNCTION = "1"
+
+
+class Formatting(Enum):
+    PRESERVE = "1"
+    DISCARD = "0"
+
+
+class Outline(Enum):
+    DETECT = "1"
+    IGNORE = "0"
+
+
 @dataclass
 class Translator:
     auth_key: str
     source_lang: Language = Language.EN
     target_lang: Language = Language.DE
-    split_sentences: bool = True
-    preserve_formatting: bool = False
-    xml_handling: bool = False
-    outline_detection: bool = True
+    split_sentences: SentenceSplitting = SentenceSplitting.NEWLINES_INTERPUNCTION
+    preserve_formatting: Formatting = Formatting.DISCARD
+    tag_handling: TagHandling = None
+    outline_detection: Outline = Outline.DETECT
     non_splitting_tags: List[str] = field(default_factory=list)
     splitting_tags: List[str] = field(default_factory=list)
     ignore_tags: List[str] = field(default_factory=list)
     retry_limit: int = 5
 
-    def translate_text(self, text: str, retries: int = 0) -> str:
+    def _build_request(self, text: str) -> Dict[str, str]:
         params = {
             "auth_key": self.auth_key,
             "text": text,
             "source_lang": self.source_lang.value,
             "target_lang": self.target_lang.value,
-            "split_sentences": int(self.split_sentences),
-            "preserve_formatting": int(self.preserve_formatting),
+            "split_sentences": self.split_sentences.value,
+            "preserve_formatting": self.preserve_formatting.value,
         }
 
-        if self.xml_handling:
+        if self.tag_handling:
             params.update(
                 {
-                    "tag_handling": "xml",
-                    "outline_detection": int(self.outline_detection),
-                    "non_splitting_tags": ",".join(self.non_splitting_tags),
-                    "spitting_tags": ",".join(self.splitting_tags),
-                    "ignore_tags": ",".join(self.ignore_tags),
+                    "tag_handling": self.tag_handling.value,
+                    "outline_detection": self.outline_detection.value,
                 }
             )
 
+            for param in [
+                self.non_splitting_tags,
+                self.splitting_tags,
+                self.ignore_tags,
+            ]:
+                if param:
+                    params.update({",".join(param)})
+
+        return params
+
+    def translate_text(self, text: str, retries: int = 0) -> str:
+        params = self._build_request(text)
         request = requests.post("https://api.deepl.com/v2/translate", data=params)
         code = request.status_code
 
