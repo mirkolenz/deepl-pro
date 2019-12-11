@@ -1,5 +1,5 @@
 import pytest
-import deepl_translator as dl
+import recap_deepl_pro as dl
 
 
 @pytest.fixture
