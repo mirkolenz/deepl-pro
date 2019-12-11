@@ -1,6 +1,6 @@
 [tool.poetry]
-name = "DeepL-Pro"
-version = "1.0.0"
+name = "ReCAP-DeepL-Pro"
+version = "0.1.0"
 description = "A wrapper for the DeepL Pro API."
 authors = ["Mirko Lenz <info@mirko-lenz.de>"]
 
