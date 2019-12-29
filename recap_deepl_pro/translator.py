@@ -120,8 +120,8 @@ class Translator:
                 elif code == 503:
                     log.warn("Resource currently unavailable. Try again later.")
 
-                log.info(f"Waiting {self.timeout} seconds until retry.")
-                time.sleep(self.timeout)
+                log.info(f"Waiting {self.retry_timeout} seconds until retry.")
+                time.sleep(self.retry_timeout)
 
                 return self.translate_text(text, retries + 1)
             else:
