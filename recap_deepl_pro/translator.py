@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import List, Dict
+import typing as t
 import multiprocessing
 import time
 import logging
@@ -7,19 +7,19 @@ from dataclasses import dataclass, field
 
 import requests
 
-logger = logging.getLogger("deepl_translator")
+log = logging.getLogger(__name__)
 
 
 class Language(Enum):
-    EN = "EN"
-    DE = "DE"
-    FR = "FR"
-    ES = "ES"
-    PT = "PT"
-    IT = "IT"
-    NL = "NL"
-    PL = "PL"
-    RU = "RU"
+    EN = "en"
+    DE = "de"
+    FR = "fr"
+    ES = "es"
+    PT = "pt"
+    IT = "it"
+    NL = "nl"
+    PL = "pl"
+    RU = "ru"
 
 
 class TagHandling(Enum):
@@ -51,13 +51,13 @@ class Translator:
     preserve_formatting: Formatting = Formatting.DISCARD
     tag_handling: TagHandling = None
     outline_detection: Outline = Outline.DETECT
-    non_splitting_tags: List[str] = field(default_factory=list)
-    splitting_tags: List[str] = field(default_factory=list)
-    ignore_tags: List[str] = field(default_factory=list)
+    non_splitting_tags: t.List[str] = field(default_factory=list)
+    splitting_tags: t.List[str] = field(default_factory=list)
+    ignore_tags: t.List[str] = field(default_factory=list)
     retry_timeout: int = 2
     retry_limit: int = 7
 
-    def _build_request(self, text: str) -> Dict[str, str]:
+    def _build_request(self, text: str) -> t.Dict[str, str]:
         params = {
             "auth_key": self.auth_key,
             "text": text,
@@ -114,13 +114,13 @@ class Translator:
             if retries <= self.retry_limit:
 
                 if code == 429:
-                    logger.warn(
+                    log.warn(
                         "Too many requests. Please wait and resend your request."
                     )
                 elif code == 503:
-                    logger.warn("Resource currently unavailable. Try again later.")
+                    log.warn("Resource currently unavailable. Try again later.")
 
-                logger.info(f"Waiting {self.timeout} seconds until retry.")
+                log.info(f"Waiting {self.timeout} seconds until retry.")
                 time.sleep(self.timeout)
 
                 return self.translate_text(text, retries + 1)
@@ -133,7 +133,7 @@ class Translator:
         else:
             raise RuntimeError("Internal error.")
 
-    def translate_texts(self, texts: List[str], parallel: bool = False) -> List[str]:
+    def translate_texts(self, texts: t.List[str], parallel: bool = False) -> t.List[str]:
         if parallel:
             with multiprocessing.Pool() as pool:
                 return pool.map(self.translate_text, texts)

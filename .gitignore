@@ -1,5 +1,6 @@
 *key.txt
 .vscode/
+.idea/
 
 
 # Created by https://www.gitignore.io/api/macos,python,visualstudiocode
