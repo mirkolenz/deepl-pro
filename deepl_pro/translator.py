@@ -5,6 +5,9 @@ import time
 import logging
 from dataclasses import dataclass, field
 
+# import httpx
+# import asyncio
+
 import requests
 
 log = logging.getLogger(__name__)
@@ -24,6 +27,7 @@ class Language(Enum):
 
 class TagHandling(Enum):
     XML = "xml"
+    PLAIN = "plain"
 
 
 class SentenceSplitting(Enum):
@@ -42,20 +46,54 @@ class Outline(Enum):
     IGNORE = "0"
 
 
-@dataclass
+T = t.TypeVar("T")
+
+
+def to_enum(value: t.Union[str, T], enum: t.Type[T]) -> T:
+    return value if isinstance(value, enum) else enum(value)
+
+
 class Translator:
     auth_key: str
     source_lang: Language = Language.EN
     target_lang: Language = Language.DE
     split_sentences: SentenceSplitting = SentenceSplitting.NEWLINES_INTERPUNCTION
     preserve_formatting: Formatting = Formatting.DISCARD
-    tag_handling: TagHandling = None
+    tag_handling: TagHandling = TagHandling.PLAIN
     outline_detection: Outline = Outline.DETECT
     non_splitting_tags: t.List[str] = field(default_factory=list)
     splitting_tags: t.List[str] = field(default_factory=list)
     ignore_tags: t.List[str] = field(default_factory=list)
     retry_timeout: int = 2
     retry_limit: int = 7
+
+    def __init__(
+        self,
+        auth_key: str,
+        source_lang: t.Union[str, Language],
+        target_lang: t.Union[str, Language],
+        split_sentences: SentenceSplitting = SentenceSplitting.NEWLINES_INTERPUNCTION,
+        preserve_formatting: Formatting = Formatting.DISCARD,
+        tag_handling: t.Union[str, TagHandling] = TagHandling.PLAIN,
+        outline_detection: Outline = Outline.DETECT,
+        non_splitting_tags: t.List[str] = None,
+        splitting_tags: t.List[str] = None,
+        ignore_tags: t.List[str] = None,
+        retry_timeout: int = 2,
+        retry_limit: int = 7,
+    ):
+        self.auth_key = auth_key
+        self.source_lang = to_enum(source_lang, Language)
+        self.target_lang = to_enum(target_lang, Language)
+        self.split_sentences = split_sentences
+        self.preserve_formatting = preserve_formatting
+        self.tag_handling = to_enum(tag_handling, TagHandling)
+        self.outline_detection = outline_detection
+        self.non_splitting_tags = non_splitting_tags
+        self.splitting_tags = splitting_tags
+        self.ignore_tags = ignore_tags
+        self.retry_timeout = retry_timeout
+        self.retry_limit = retry_limit
 
     def _build_request(self, text: str) -> t.Dict[str, str]:
         params = {
@@ -114,11 +152,11 @@ class Translator:
             if retries <= self.retry_limit:
 
                 if code == 429:
-                    log.warn(
+                    log.warning(
                         "Too many requests. Please wait and resend your request."
                     )
                 elif code == 503:
-                    log.warn("Resource currently unavailable. Try again later.")
+                    log.warning("Resource currently unavailable. Try again later.")
 
                 log.info(f"Waiting {self.retry_timeout} seconds until retry.")
                 time.sleep(self.retry_timeout)
@@ -133,9 +171,27 @@ class Translator:
         else:
             raise RuntimeError("Internal error.")
 
-    def translate_texts(self, texts: t.List[str], parallel: bool = False) -> t.List[str]:
+    def translate_texts(
+        self, texts: t.List[str], parallel: bool = False
+    ) -> t.List[str]:
         if parallel:
             with multiprocessing.Pool() as pool:
                 return pool.map(self.translate_text, texts)
         else:
             return list(map(self.translate_text, texts))
+
+
+#     async def translate_text_async(self, text: str) -> str:
+#         pass
+#
+#     async def translate_texts_async(self, texts: t.Iterable[str]) -> t.List[str]:
+#         pass
+#
+#
+# async def main():
+#     print("hello")
+#     await asyncio.sleep(1)
+#     print("world")
+#
+#
+# asyncio.run(main())

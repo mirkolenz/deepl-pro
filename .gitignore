@@ -1,6 +1,7 @@
 *key.txt
 .vscode/
 .idea/
+.venv
 
 
 # Created by https://www.gitignore.io/api/macos,python,visualstudiocode
